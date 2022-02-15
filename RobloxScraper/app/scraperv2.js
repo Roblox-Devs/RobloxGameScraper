@@ -25,7 +25,8 @@ async function getUniverseId(placeId) {
 
 async function writeFile(placeId, gameName) {
     console.log("writing game with id", placeId)
-    fs.writeFileSync(`scraped_games/${gameName} [${placeId}].rbxl`, (await axios.get("https://assetdelivery.roblox.com/v1/asset/?id=" + placeId, {responseType: "arraybuffer"})).data)
+    let filteredName = `${gameName} [${placeId}].rbxl`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '')
+    fs.writeFileSync(`scraped_games/${filteredName}`, (await axios.get("https://assetdelivery.roblox.com/v1/asset/?id=" + placeId, {responseType: "arraybuffer"})).data)
 }
 
 async function getAssets(universeIds) { 
