@@ -15,7 +15,7 @@ try {
 
 async function getUniverseId(placeId) {
     return new Promise((resolve, reject) => {
-        axios.get(`https://api.roblox.com/Marketplace/ProductInfo?assetId=1818`).then((response) => {
+        axios.get(`https://api.roblox.com/Marketplace/ProductInfo?assetId=${placeId}`).then((response) => {
             if (response.data && response.data["AssetTypeId"] == 9) {
                 resolve(response.data["ProductId"])
                 } else {
