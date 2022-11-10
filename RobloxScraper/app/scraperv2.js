@@ -15,11 +15,15 @@ try {
 
 async function getUniverseId(placeId) {
     return new Promise((resolve, reject) => {
-        axios.get(`https://api.roblox.com/universes/get-universe-containing-place?placeid=${placeId}`).then((response) => {
-            resolve(response.data.UniverseId)
-        }).catch((error) => {
-            resolve("fail")
-        })
+        axios.get(`https://api.roblox.com/Marketplace/ProductInfo?assetId=1818`).then((response) => {
+            if (response.data && response.data["AssetTypeId"] == 9) {
+                resolve(response.data["ProductId"])
+                } else {
+                    resolve("fail")
+                }
+            }).catch((error) => {
+                resolve("fail")
+            })
     })
 }
 
