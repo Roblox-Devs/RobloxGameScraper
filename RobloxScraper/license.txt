@@ -1,8 +1,8 @@
-STRAWBERRY LICENSE 2022-2100
+STAN LICENSE 2023-2100
 #
 
 ## UPDATING
-You can push updates to any file in this repository if and only if it is a fix that you think is needed. You can not push any updates which will break the program or can result in malicous intent.
+You can do anything (except change this license).
 
 ## USAGE
-You can download and use this from this repository, however you can not re-upload this as your own or sell this program.
+You can do anything (except change this license).

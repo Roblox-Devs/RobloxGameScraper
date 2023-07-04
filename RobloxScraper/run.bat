@@ -1,2 +1,2 @@
 @echo off
-node app/scraperv2.js
+node app/index.js
