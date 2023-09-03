@@ -1,1 +1,0 @@
-cd app && npm i

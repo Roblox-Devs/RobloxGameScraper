@@ -1,6 +1,0 @@
-{
-  "dependencies": {
-    "axios": "^0.26.0",
-    "cli-color": "^2.0.3"
-  }
-}
