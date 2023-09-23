@@ -38,7 +38,7 @@ async function writeSpecialFile(url, filteredName) {
 }
 async function writeFile(placeId, gameName, ati, fle, creatorName, log, created, assetTypeThatWasScraped) {
     let filteredName = ""
-    ati = parseInt(ati)
+    ati = ati !== "anything lol" ? parseInt(ati) : ati;
     if (ati == 10) {
         filteredName = `${gameName} [${placeId}].rbxm`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '');
     }
@@ -54,10 +54,13 @@ async function writeFile(placeId, gameName, ati, fle, creatorName, log, created,
             folder = "scraped_everything"
         }
         if (folder == "scraped_custom" || folder == "scraped_models") {
+	    console.log(chalk.green("[SUCCESS]") + ": (ID: " + placeId + ") Name: " + gameName);
             fs.appendFileSync(`${folder}/log.txt`, `${gameName} | By: ${creatorName} | URL: https://roblox.com/library/${placeId}\n | Created: ${created}`, "utf8", (err) => { });
         } else if (folder == "scraped_everything") {
-            fs.appendFileSync(`${folder}/log.txt`, `${gameName} | By: ${creatorName} | URL: https://roblox.com/library/${placeId}\n | Created: ${created} | AssetTypeID: ${assetTypeThatWasScraped}`, "utf8", (err) => { });
+	    console.log(chalk.green("[SUCCESS]") + ": (ID: " + placeId + ") Name: " + gameName);
+            fs.appendFileSync(`${folder}/log.txt`, `${gameName} | By: ${creatorName} | URL: https://roblox.com/library/${placeId} | Created: ${created} | AssetTypeID: ${assetTypeThatWasScraped}\n`, "utf8", (err) => { });
         } else {
+	    console.log(chalk.green("[SUCCESS]") + ": (PlaceID: " + placeId + ") Name: " + gameName);
             fs.appendFileSync(`${folder}/log.txt`, `${gameName} | By: ${creatorName} | URL: https://roblox.com/games/${placeId} | Created: ${created} \n`, "utf8", (err) => { });
         }
     } else {
