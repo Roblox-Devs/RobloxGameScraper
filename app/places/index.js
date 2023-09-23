@@ -48,7 +48,7 @@ async function writeFile(placeId, gameName, ati, fle, creatorName, log, created,
     if (ati != 9 && ati != 10) {
         filteredName = `${gameName} [${placeId}]${fle}`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '');
     }
-    if (log) {
+    if (log || ati == "anything lol") {
         let folder = (ati === 9) ? "scraped_games" : (ati === 10) ? "scraped_models" : "scraped_custom";
         if (ati == "anything lol") {
             folder = "scraped_everything"
