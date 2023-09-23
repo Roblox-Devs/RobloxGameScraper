@@ -15,8 +15,8 @@ try {
 
 async function getName(placeid, ati) {
     return axios.get("https://economy.roblox.com/v2/developer-products/" + placeid + "/info", { headers: {} }).then(async function (response) {
-        if (response.data.AssetTypeId == parseInt(ati)) {
-            return [response.data.Name, response.data.Creator.Name]
+        if (ati == "anything lol" || response.data.AssetTypeId == parseInt(ati)) {
+            return [response.data.Name, response.data.Creator.Name, response.data.Created, response.data.AssetTypeId]
         }
         return null
     }).catch(async function (error) {
@@ -36,7 +36,7 @@ async function writeSpecialFile(url, filteredName) {
     });
     if (response == null) { return response } else { return response.data }
 }
-async function writeFile(placeId, gameName, ati, fle, creatorName, log) {
+async function writeFile(placeId, gameName, ati, fle, creatorName, log, created, assetTypeThatWasScraped) {
     let filteredName = ""
     ati = parseInt(ati)
     if (ati == 10) {
@@ -50,10 +50,15 @@ async function writeFile(placeId, gameName, ati, fle, creatorName, log) {
     }
     if (log) {
         let folder = (ati === 9) ? "scraped_games" : (ati === 10) ? "scraped_models" : "scraped_custom";
+        if (ati == "anything lol") {
+            folder = "scraped_everything"
+        }
         if (folder == "scraped_custom" || folder == "scraped_models") {
-            fs.appendFileSync(`${folder}/log.txt`, `${gameName} | By: ${creatorName} | URL: https://roblox.com/library/${placeId}\n`, "utf8", (err) => { });
+            fs.appendFileSync(`${folder}/log.txt`, `${gameName} | By: ${creatorName} | URL: https://roblox.com/library/${placeId}\n | Created: ${created}`, "utf8", (err) => { });
+        } else if (folder == "scraped_everything") {
+            fs.appendFileSync(`${folder}/log.txt`, `${gameName} | By: ${creatorName} | URL: https://roblox.com/library/${placeId}\n | Created: ${created} | AssetTypeID: ${assetTypeThatWasScraped}`, "utf8", (err) => { });
         } else {
-            fs.appendFileSync(`${folder}/log.txt`, `${gameName} | By: ${creatorName} | ID: https://roblox.com/games/${placeId}\n`, "utf8", (err) => { });
+            fs.appendFileSync(`${folder}/log.txt`, `${gameName} | By: ${creatorName} | URL: https://roblox.com/games/${placeId} | Created: ${created} \n`, "utf8", (err) => { });
         }
     } else {
         try {
@@ -104,7 +109,7 @@ async function init(startId, endId, ati, format, log) {
         let info = await getName(index, ati)
         if (info != null) {
             let name = info[0]
-            await writeFile(index, name, ati, format, info[1], log)
+            await writeFile(index, name, ati, format, info[1], log, info[2], info[3])
         } else {
             console.log(chalk.red(`[FALILED]`) + " on ID: " + index)
         }
@@ -159,7 +164,7 @@ async function startScrape(ati, format) {
     const json = fs.readFileSync('./config/config.json')
     const log = JSON.parse(json).log
     const config = JSON.parse(json).threads
-    const type = (ati == 10) ? "model" : (ati == 9) ? "place" : "ATI scrape"
+    let type = (ati == 10) ? "model" : (ati == 9) ? "place" : "ATI scrape"
     if (isMainThread) {
         if (config == "NOT SET") {
             clearConsole()
@@ -167,6 +172,13 @@ async function startScrape(ati, format) {
             await delay(1)
             module.exports.successThing = true
             return
+        }
+        if (ati == "anything lol") { 
+            console.log(`
+            You have decided to scrape with the new experimental feature (EVERYTHING)
+            Please note, this will not download assets, and that it will log all assets it finds to a text file.
+            `)
+            type = "Everything"
         }
         inquirer = require("../index.js").inquirer
         inquirer.question("Starting (" + type + ") ID: ", (startId) => {

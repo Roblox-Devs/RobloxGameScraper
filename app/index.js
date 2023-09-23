@@ -65,6 +65,7 @@ async function main(print = true) {
     if (!fs.existsSync("scraped_games")) { fs.mkdirSync("scraped_games"); }
     if (!fs.existsSync("scraped_models")) { fs.mkdirSync("scraped_models"); }
     if (!fs.existsSync("scraped_custom")) { fs.mkdirSync("scraped_custom"); }
+    if (!fs.existsSync("scraped_everything")) { fs.mkdirSync("scraped_everything"); }
 
 
     const config = JSON.parse(fs.readFileSync("config/config.json"))
@@ -81,7 +82,8 @@ async function main(print = true) {
 [2] Scrape models`)
     if (config.experimental) {
         console.log("[3] Scrape via AssetTypeID")
-        console.log("[4] Settings")
+        console.log("[4] Scrape all assets")
+        console.log("[5] Settings")
     } else {
         console.log("[3] Settings")
     }
@@ -92,6 +94,10 @@ async function main(print = true) {
             return
         }
         if (4 == choice && config.experimental) {
+            placeScraper.startScrape("anything lol")
+            return
+        }
+        if (5 == choice && config.experimental) {
             clearConsole()
             settingsMenu()
             return
