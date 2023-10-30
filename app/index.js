@@ -8,6 +8,18 @@ const inquirer = readline.createInterface({
 const placeScraper = require('./places/index.js')
 const fs = require('fs')
 let setThreadsMenu = false;
+let quotes = [
+    "",
+    "This program is TECH!!!",
+    "The future of scraping is RGS.",
+    "Remember, STATE OF THE ART.",
+    "Billions must scrape!",
+    "undefined, wait, why is this quote undefined?",
+]
+function mathRand(min, max) {
+    return Math.floor(Math.random() * (max - min + 1) + min)
+}
+
 function clearConsole() {
     console.clear()
 
@@ -75,7 +87,7 @@ async function main(print = true) {
 +:+    +:+ +:+        +:+        
 +#++:++#:  :#:        +#++:++#++              state of the art game scraper
 +#+    +#+ +#+   +#+#        +#+              beats strawberrys's scraper (his isn't state of the art)
-#+#    #+# #+#    #+# #+#    #+#             
+#+#    #+# #+#    #+# #+#    #+#              ` + quotes[mathRand(1, 5)] + `
 ###    ###  ########   ########  
 `));
     console.log(`[1] Scrape games             

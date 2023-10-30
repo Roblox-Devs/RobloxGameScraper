@@ -54,36 +54,36 @@ async function writeFile(placeId, gameName, ati, fle, creatorName, log, created,
             folder = "scraped_everything"
         }
         if (folder == "scraped_custom" || folder == "scraped_models") {
-	    console.log(chalk.green("[SUCCESS]") + ": (ID: " + placeId + ") Name: " + gameName);
+            console.log(chalk.green("[SUCCESS]") + ": (ID: " + placeId + ") Name: " + gameName);
             fs.appendFileSync(`${folder}/log.txt`, `${gameName} | By: ${creatorName} | URL: https://roblox.com/library/${placeId}\n | Created: ${created}`, "utf8", (err) => { });
         } else if (folder == "scraped_everything") {
-	    console.log(chalk.green("[SUCCESS]") + ": (ID: " + placeId + ") Name: " + gameName);
+            console.log(chalk.green("[SUCCESS]") + ": (ID: " + placeId + ") Name: " + gameName);
             fs.appendFileSync(`${folder}/log.txt`, `${gameName} | By: ${creatorName} | URL: https://roblox.com/library/${placeId} | Created: ${created} | AssetTypeID: ${assetTypeThatWasScraped}\n`, "utf8", (err) => { });
         } else {
-	    console.log(chalk.green("[SUCCESS]") + ": (PlaceID: " + placeId + ") Name: " + gameName);
+            console.log(chalk.green("[SUCCESS]") + ": (PlaceID: " + placeId + ") Name: " + gameName);
             fs.appendFileSync(`${folder}/log.txt`, `${gameName} | By: ${creatorName} | URL: https://roblox.com/games/${placeId} | Created: ${created} \n`, "utf8", (err) => { });
         }
     } else {
         try {
-            const response = await axios.get("https://assetdelivery.roblox.com/v1/asset/?id=" + placeId, { responseType: "arraybuffer" });
+            let success = false;
+            const locationToLink = await axios.get("https://assetdelivery.roblox.com/v1/assetId/" + placeId).then(function (response) {
+                const data = response.data
+                if (data.errors == undefined) {
+                    success = true
+                    return data.location
+                }
+            })
+            if (!success) {
+                console.log(chalk.red(`[FALILED]`) + " on ID: " + index)
+                return
+            }
+            const response = await axios.get(locationToLink, { responseType: "arraybuffer" });
+
+
             const buffer = response.data;
             const uint8Array = new Uint8Array(buffer);
             const text = String.fromCharCode.apply(null, uint8Array);
             let fixed = undefined;
-            if (ati != 10 && ati != 9) {
-                await new Promise((resolve, reject) => {
-                    xml2js.parseString(text, async (err, result) => {
-                        if (!err) {
-                            const url = result.roblox.Item[0].Properties[0].Content[0].url[0];
-                            fixed = await writeSpecialFile(url, filteredName);
-                            resolve();
-                        } else {
-                            resolve(err);
-                        }
-                    });
-                });
-            }
-
             if (response.status === 200) {
                 if (ati == 10) {
                     console.log(chalk.green("[SUCCESS]") + ": (MODEL ID: " + placeId + ") Name: " + filteredName);
@@ -176,7 +176,7 @@ async function startScrape(ati, format) {
             module.exports.successThing = true
             return
         }
-        if (ati == "anything lol") { 
+        if (ati == "anything lol") {
             console.log(`
             You have decided to scrape with the new experimental feature (EVERYTHING)
             Please note, this will not download assets, and that it will log all assets it finds to a text file.
