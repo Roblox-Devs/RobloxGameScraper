@@ -136,8 +136,15 @@ async function writeFile(placeId, gameName, ati, fle, creatorName, log, created,
         filteredName = `${gameName} [${placeId}]${fle}`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '');
     }
     if (allVersions) {
-        if (!fs.existsSync(`${folder}/${placeId} (${filteredGameName})`)) {
-            fs.mkdirSync(`${folder}/${placeId} (${filteredGameName})`);
+        let allVerSuccess = false
+        await axios.get("https://assetdelivery.roblox.com/v1/assetId/" + placeId).then(function (response) {
+            const data = response.data
+            if (data.errors == undefined) {
+                allVerSuccess = true
+            }
+        })
+        if (!fs.existsSync(`${folder}/${placeId} (${filteredGameName})`) && allVerSuccess) {
+            fs.mkdirSync(`${folder}/${placeId} (${filteredGameName})`, { recursive: true });
         }
         await getAllVersions(1, 255, placeId, filteredGameName, filteredName, undefined, folder)
         return
