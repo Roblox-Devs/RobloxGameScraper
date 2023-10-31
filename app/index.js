@@ -27,7 +27,13 @@ function clearConsole() {
 
 function settingsMenu() {
     const config = JSON.parse(fs.readFileSync("config/config.json"))
-    console.log(`Settings:\n[1] Threads (${config.threads})\n[2] Experimental Mode (${config.experimental})\n[3] Log in text file instead of downloading (${config.log})\n[4] Exit`)
+    console.log(`Settings:\n[1] Threads (${config.threads})\n[2] Experimental Mode (${config.experimental})\n[3] Log in text file instead of downloading (${config.log})`)
+    if (config.experimental) {
+        console.log(`[4] Scrape all versions of assets (${config.allversions})`)
+        console.log("[5] Exit")
+    } else {
+        console.log("[4] Exit")
+    }
     inquirer.question("> ", (choice) => {
         if (1 == choice) {
             clearConsole()
@@ -45,10 +51,36 @@ function settingsMenu() {
             return
         }
         if (3 == choice) {
+            if (!config.log && config.allversions) {
+                clearConsole()
+                console.log(chalk.red("[ERROR]") + " Cannot log and scrape all versions at the same time, please turn off logging.")
+                settingsMenu()
+                return
+            }
             config.log = !config.log
             fs.writeFileSync("config/config.json", JSON.stringify(config), "utf8", (err) => { })
             clearConsole()
             settingsMenu()
+            return
+        }
+        if (4 == choice && config.experimental) {
+            if (config.log && !config.allversions) {
+                clearConsole()
+                console.log(chalk.red("[ERROR]") + " Cannot log and scrape all versions at the same time, please turn off logging.")
+                settingsMenu()
+                return
+            }
+            config.allversions = !config.allversions
+            fs.writeFileSync("config/config.json", JSON.stringify(config), "utf8", (err) => { })
+            clearConsole()
+            if (config.allversions) {
+                console.log(chalk.yellow("[WARNING]") + " Scraping all versions of assets is significantly slower than just downloading the first version.")
+            }
+            settingsMenu()
+            return
+        }
+        if (5 == choice && config.experimental) {
+            main(false)
             return
         }
         if (4 == choice) {
@@ -73,7 +105,7 @@ function scrViaAVI() {
     })
 }
 async function main(print = true) {
-    if (!fs.existsSync("config")) { fs.mkdirSync("config"); fs.writeFileSync("config/config.json", `{"threads": "NOT SET", "experimental":false, "log":false}`, (err) => { }) }
+    if (!fs.existsSync("config")) { fs.mkdirSync("config"); fs.writeFileSync("config/config.json", `{"threads": "NOT SET", "experimental":false, "log":false, "allversions":false}`, (err) => { }) }
     if (!fs.existsSync("scraped_games")) { fs.mkdirSync("scraped_games"); }
     if (!fs.existsSync("scraped_models")) { fs.mkdirSync("scraped_models"); }
     if (!fs.existsSync("scraped_custom")) { fs.mkdirSync("scraped_custom"); }

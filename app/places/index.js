@@ -23,6 +23,91 @@ async function getName(placeid, ati) {
         return null
     })
 }
+async function generateRequestData(startVersion, placeId) {
+    return Array.from({ length: 255 }, (_, index) => ({
+        assetId: placeId,
+        requestId: `${startVersion + index}`,
+        version: startVersion + index
+    }));
+}
+
+async function sendReq(placeId, filteredGameName, filteredName, item, rets, folder) {
+    let retries = rets || 0;
+    let success = false;
+    try {
+        const res = await axios.get(item.location, { responseType: "arraybuffer" });
+        await fs.promises.writeFile(`${folder}/${placeId} (${filteredGameName})/[VERSION ${item.requestId}] ${filteredName}`, res.data);
+        console.log(chalk.green("[SUCCESS]") + ": (ID: " + placeId + ") Name: " + filteredName + " | Version: " + item.requestId);
+        success = true;
+    } catch (error) {
+        if (retries == 3) {
+            console.log(`Failed to retrieve ${item.location}`);
+
+        }
+        console.log(`Error in request. Retrying... `, error);
+        await sendReq(placeId, filteredGameName, filteredName, item, retries + 1);
+    }
+
+    if (!success) {
+        console.error(`Failed to retrieve ${item.location}`);
+    }
+}
+
+async function getAllVersions(startVer, endVer, placeId, filteredGameName, filteredName, retries = 3, folder) {
+    try {
+        const requestData = await generateRequestData(startVer, placeId);
+        let response;
+
+        try {
+            response = await axios.post('https://assetdelivery.roblox.com/v1/assets/batch',
+                requestData,
+                {
+                    headers: {
+                        'accept': 'application/json',
+                        'Roblox-Browser-Asset-Request': '',
+                        'Content-Type': 'application/json'
+                    }
+                }
+            );
+        } catch (error) {
+            if (retries > 0) {
+                console.log(`Error in request, possibly because of rate limiting. Retrying... (${retries} retries left)`);
+                await getAllVersions(startVer, endVer, placeId, filteredGameName, filteredName, retries - 1, folder);
+                return;
+            } else {
+                console.log(chalk.red("[COULD NOT FETCH]") + " " + placeId + " Name: " + gameName);
+                throw error;
+            }
+        }
+        const requests = response.data.map(async (item) => {
+            if (item.location) {
+                try {
+                    await sendReq(placeId, filteredGameName, filteredName, item, retries, folder);
+                } catch (error) {
+
+                }
+            }
+        });
+
+
+        await Promise.all(requests);
+
+        if (response.data[response.data.length - 1].location) {
+            if (startVer == 1) {
+                console.log("Hey ROBLOX, give me more games!")
+                await getAllVersions(startVer + 255, endVer + 255, placeId, filteredGameName, filteredName, undefined, folder);
+            } else {
+                console.log("Hey ROBLOX, give me more games!")
+                await getAllVersions(endVer + 1, endVer + 255, placeId, filteredGameName, filteredName, undefined, folder);
+            }
+        }
+    } catch (error) {
+        console.log('Error, retrying (for debug info, here is the error): ', error);
+        await getAllVersions(startVer + 255, endVer + 255, placeId, filteredGameName, filteredName, undefined, folder);
+    }
+}
+
+
 async function writeSpecialFile(url, filteredName) {
     let ur = url
     if (ur.startsWith("http://www.roblox.com/asset/")) {
@@ -36,8 +121,10 @@ async function writeSpecialFile(url, filteredName) {
     });
     if (response == null) { return response } else { return response.data }
 }
-async function writeFile(placeId, gameName, ati, fle, creatorName, log, created, assetTypeThatWasScraped) {
+async function writeFile(placeId, gameName, ati, fle, creatorName, log, created, assetTypeThatWasScraped, allVersions) {
     let filteredName = ""
+    let filteredGameName = `${gameName}`.replace(/[\\\/\:\*\?\"\<\>\.|]/g, '');
+    let folder = (ati === 9) ? "scraped_games" : (ati === 10) ? "scraped_models" : "scraped_custom";
     ati = ati !== "anything lol" ? parseInt(ati) : ati;
     if (ati == 10) {
         filteredName = `${gameName} [${placeId}].rbxm`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '');
@@ -48,8 +135,14 @@ async function writeFile(placeId, gameName, ati, fle, creatorName, log, created,
     if (ati != 9 && ati != 10) {
         filteredName = `${gameName} [${placeId}]${fle}`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '');
     }
+    if (allVersions) {
+        if (!fs.existsSync(`${folder}/${placeId} (${filteredGameName})`)) {
+            fs.mkdirSync(`${folder}/${placeId} (${filteredGameName})`);
+        }
+        await getAllVersions(1, 255, placeId, filteredGameName, filteredName, undefined, folder)
+        return
+    }
     if (log || ati == "anything lol") {
-        let folder = (ati === 9) ? "scraped_games" : (ati === 10) ? "scraped_models" : "scraped_custom";
         if (ati == "anything lol") {
             folder = "scraped_everything"
         }
@@ -107,12 +200,12 @@ async function writeFile(placeId, gameName, ati, fle, creatorName, log, created,
     }
 }
 
-async function init(startId, endId, ati, format, log) {
+async function init(startId, endId, ati, format, log, allVersions) {
     for (let index = startId; index <= endId; index++) {
         let info = await getName(index, ati)
         if (info != null) {
             let name = info[0]
-            await writeFile(index, name, ati, format, info[1], log, info[2], info[3])
+            await writeFile(index, name, ati, format, info[1], log, info[2], info[3], allVersions)
         } else {
             console.log(chalk.red(`[FALILED]`) + " on ID: " + index)
         }
@@ -126,7 +219,7 @@ async function successScreen(s, e) {
     clearConsole()
     console.log(chalk.green("Successfully scraped range: " + s + " - " + e + ". Press enter to go back to main menu"))
 }
-async function startThreads(sid, eid, threadamount, ati, format, log) {
+async function startThreads(sid, eid, threadamount, ati, format, log, allVersions) {
     console.log("Starting threads...")
     const batchSize = Math.ceil((eid - sid) / threadamount);
     let threadsWeHaveOpen = 0
@@ -135,7 +228,7 @@ async function startThreads(sid, eid, threadamount, ati, format, log) {
             const batchStart = sid + i * batchSize;
             const batchEnd = Math.min(batchStart + batchSize, eid);
             if (batchStart > batchEnd) { return; }
-            const worker = new Worker(__filename, { workerData: { sid: batchStart, eid: batchEnd, at: ati, format: format, log: log } });
+            const worker = new Worker(__filename, { workerData: { sid: batchStart, eid: batchEnd, at: ati, format: format, log: log, allVersions: allVersions } });
             worker.on('message', message => {
 
                 threadsWeHaveOpen -= 1;
@@ -157,7 +250,7 @@ const delay = ms => new Promise(resolve => setTimeout(resolve, ms))
 async function a() {
     if (isMainThread) {
     } else {
-        await init(workerData.sid, workerData.eid, workerData.at, workerData.format, workerData.log)
+        await init(workerData.sid, workerData.eid, workerData.at, workerData.format, workerData.log, workerData.allVersions)
         parentPort.postMessage(true)
     }
 }
@@ -167,6 +260,7 @@ async function startScrape(ati, format) {
     const json = fs.readFileSync('./config/config.json')
     const log = JSON.parse(json).log
     const config = JSON.parse(json).threads
+    const allVersions = JSON.parse(json).allversions
     let type = (ati == 10) ? "model" : (ati == 9) ? "place" : "ATI scrape"
     if (isMainThread) {
         if (config == "NOT SET") {
@@ -180,8 +274,12 @@ async function startScrape(ati, format) {
             console.log(`
             You have decided to scrape with the new experimental feature (EVERYTHING)
             Please note, this will not download assets, and that it will log all assets it finds to a text file.
+            This will not follow the "Download all versions" setting.
             `)
             type = "Everything"
+        }
+        if (type == "Everything") {
+            allVersions = false;
         }
         inquirer = require("../index.js").inquirer
         inquirer.question("Starting (" + type + ") ID: ", (startId) => {
@@ -193,7 +291,7 @@ async function startScrape(ati, format) {
                 }
                 clearConsole()
                 realEnd = endId
-                startThreads(parseInt(startId), parseInt(endId), config, ati, format, log)
+                startThreads(parseInt(startId), parseInt(endId), config, ati, format, log, allVersions)
             })
         })
     }
