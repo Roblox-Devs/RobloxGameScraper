@@ -5,7 +5,12 @@ const { Worker, isMainThread, parentPort, workerData, MessageChannel } = require
 const { start } = require("repl");
 const chalk = require("chalk")
 const xml2js = require('xml2js');
+const https = require('https');
 const { clear } = require("console");
+const client = axios.create({
+    timeout: 60000,
+    httpsAgent: new https.Agent({ keepAlive: true }),
+})
 
 let realEnd;
 try {
@@ -35,7 +40,7 @@ async function sendReq(placeId, filteredGameName, filteredName, item, rets, fold
     let retries = rets || 0;
     let success = false;
     try {
-        const res = await axios.get(item.location, { responseType: "arraybuffer" });
+        const res = await client.get(item.location, { responseType: "arraybuffer" });
         await fs.promises.writeFile(`${folder}/${placeId} (${filteredGameName})/[VERSION ${item.requestId}] ${filteredName}`, res.data);
         console.log(chalk.green("[SUCCESS]") + ": (ID: " + placeId + ") Name: " + filteredName + " | Version: " + item.requestId);
         success = true;
@@ -137,7 +142,7 @@ async function writeFile(placeId, gameName, ati, fle, creatorName, log, created,
     }
     if (allVersions) {
         let allVerSuccess = false
-        await axios.get("https://assetdelivery.roblox.com/v1/assetId/" + placeId).then(function (response) {
+        await client.get("https://assetdelivery.roblox.com/v1/assetId/" + placeId).then(function (response) {
             const data = response.data
             if (data.errors == undefined) {
                 allVerSuccess = true
