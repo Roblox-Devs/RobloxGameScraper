@@ -41,7 +41,8 @@ async function sendReq(placeId, filteredGameName, filteredName, item, rets, fold
     let success = false;
     try {
         const res = await client.get(item.location, { responseType: "arraybuffer" });
-        await fs.promises.writeFile(`${folder}/${placeId} (${filteredGameName})/[VERSION ${item.requestId}] ${filteredName}`, res.data);
+        await fs.mkdirSync(`${folder}/${placeId} (${filteredGameName})`, { recursive: true })
+        await fs.writeFileSync(`${folder}/${placeId} (${filteredGameName})/[VERSION ${item.requestId}] ${filteredName}`, res.data);
         console.log(chalk.green("[SUCCESS]") + ": (ID: " + placeId + ") Name: " + filteredName + " | Version: " + item.requestId);
         success = true;
     } catch (error) {
@@ -75,12 +76,17 @@ async function getAllVersions(startVer, endVer, placeId, filteredGameName, filte
                 }
             );
         } catch (error) {
+            if (error.response && error.response.status === 429) {
+                console.log(chalk.magenta("[RATELIMITED ON]") + " " + placeId + " Name: " + filteredGameName + " | Retrying until unratelimited.");
+                await getAllVersions(startVer, endVer, placeId, filteredGameName, filteredName, retries, folder);
+                return
+            }
             if (retries > 0) {
-                console.log(`Error in request, possibly because of rate limiting. Retrying... (${retries} retries left)`);
+                console.log(`Error in request, possibly because of rate limiting. Retrying... (${retries} retries left), error: ${error}`);
                 await getAllVersions(startVer, endVer, placeId, filteredGameName, filteredName, retries - 1, folder);
                 return;
             } else {
-                console.log(chalk.red("[COULD NOT FETCH]") + " " + placeId + " Name: " + gameName);
+                console.log(chalk.red("[COULD NOT FETCH]") + " " + placeId + " Name: " + filteredGameName);
                 throw error;
             }
         }
@@ -141,16 +147,6 @@ async function writeFile(placeId, gameName, ati, fle, creatorName, log, created,
         filteredName = `${gameName} [${placeId}]${fle}`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '');
     }
     if (allVersions) {
-        let allVerSuccess = false
-        await client.get("https://assetdelivery.roblox.com/v1/assetId/" + placeId).then(function (response) {
-            const data = response.data
-            if (data.errors == undefined) {
-                allVerSuccess = true
-            }
-        })
-        if (!fs.existsSync(`${folder}/${placeId} (${filteredGameName})`) && allVerSuccess) {
-            fs.mkdirSync(`${folder}/${placeId} (${filteredGameName})`, { recursive: true });
-        }
         await getAllVersions(1, 255, placeId, filteredGameName, filteredName, undefined, folder)
         return
     }

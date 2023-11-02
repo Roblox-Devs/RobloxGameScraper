@@ -1,0 +1,4 @@
+app/scraped_games/*
+app/scraped_models/*
+app/scraped_custom/*
+app/scraped_everything/*
