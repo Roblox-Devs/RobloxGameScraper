@@ -51,7 +51,7 @@ async function sendReq(placeId, filteredGameName, filteredName, item, rets, fold
 
         }
         console.log(`Error in request. Retrying... `, error);
-        await sendReq(placeId, filteredGameName, filteredName, item, retries + 1);
+        await sendReq(placeId, filteredGameName, filteredName, item, retries + 1, folder);
     }
 
     if (!success) {
@@ -134,17 +134,17 @@ async function writeSpecialFile(url, filteredName) {
 }
 async function writeFile(placeId, gameName, ati, fle, creatorName, log, created, assetTypeThatWasScraped, allVersions) {
     let filteredName = ""
-    let filteredGameName = `${gameName}`.replace(/[\\\/\:\*\?\"\<\>\.|]/g, '');
+    let filteredGameName = `${gameName}`.replace(/[\\\/\:\*\?\"\<\>\.|]/g, '').replace(/[^\x00-\x7F]/g, "");
     let folder = (ati === 9) ? "scraped_games" : (ati === 10) ? "scraped_models" : "scraped_custom";
     ati = ati !== "anything lol" ? parseInt(ati) : ati;
     if (ati == 10) {
-        filteredName = `${gameName} [${placeId}].rbxm`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '');
+        filteredName = `${gameName} [${placeId}].rbxm`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '').replace(/[^\x00-\x7F]/g, "");
     }
     if (ati == 9) {
-        filteredName = `${gameName} [${placeId}].rbxl`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '');
+        filteredName = `${gameName} [${placeId}].rbxl`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '').replace(/[^\x00-\x7F]/g, "");
     }
     if (ati != 9 && ati != 10) {
-        filteredName = `${gameName} [${placeId}]${fle}`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '');
+        filteredName = `${gameName} [${placeId}]${fle}`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '').replace(/[^\x00-\x7F]/g, "");
     }
     if (allVersions) {
         await getAllVersions(1, 255, placeId, filteredGameName, filteredName, undefined, folder)
