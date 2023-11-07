@@ -36,8 +36,9 @@ async function generateRequestData(startVersion, placeId) {
     }));
 }
 
-async function sendReq(placeId, filteredGameName, filteredName, item, rets, folder) {
+async function sendReq(placeId, flt, filteredName, item, rets, folder) {
     let retries = rets || 0;
+    let filteredGameName = `${flt}`.replace(/[^a-zA-Z0-9[\],\s-#↓$+]+/g, "")
     let success = false;
     try {
         const res = await client.get(item.location, { responseType: "arraybuffer" });
@@ -134,17 +135,17 @@ async function writeSpecialFile(url, filteredName) {
 }
 async function writeFile(placeId, gameName, ati, fle, creatorName, log, created, assetTypeThatWasScraped, allVersions) {
     let filteredName = ""
-    let filteredGameName = `${gameName}`.replace(/[\\\/\:\*\?\"\<\>\.|]/g, '').replace(/[^\x00-\x7F]/g, "");
+    let filteredGameName = `${gameName}`.replace(/[\\\/\:\*\?\"\<\>\.|]/g, '')
     let folder = (ati === 9) ? "scraped_games" : (ati === 10) ? "scraped_models" : "scraped_custom";
     ati = ati !== "anything lol" ? parseInt(ati) : ati;
     if (ati == 10) {
-        filteredName = `${gameName} [${placeId}].rbxm`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '').replace(/[^\x00-\x7F]/g, "");
+        filteredName = `${gameName.replace(/[^a-zA-Z0-9[\],\s-#↓$+]+/g, "")} [${placeId}].rbxm`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '').replace(/[^\x00-\x7F]/g, "");
     }
     if (ati == 9) {
-        filteredName = `${gameName} [${placeId}].rbxl`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '').replace(/[^\x00-\x7F]/g, "");
+        filteredName = `${gameName.replace(/[^a-zA-Z0-9[\],\s-#↓$+]+/g, "")} [${placeId}].rbxl`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '').replace(/[^\x00-\x7F]/g, "");
     }
     if (ati != 9 && ati != 10) {
-        filteredName = `${gameName} [${placeId}]${fle}`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '').replace(/[^\x00-\x7F]/g, "");
+        filteredName = `${gameName.replace(/[^a-zA-Z0-9[\],\s-#↓$+]+/g, "")} [${placeId}]${fle}`.replace(/[\\\/\:\*\?\"\<\>\|]/g, '').replace(/[^\x00-\x7F]/g, "");
     }
     if (allVersions) {
         await getAllVersions(1, 255, placeId, filteredGameName, filteredName, undefined, folder)
