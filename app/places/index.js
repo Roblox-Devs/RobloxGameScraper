@@ -269,7 +269,7 @@ async function startScrape(ati, format) {
     const json = fs.readFileSync('./config/config.json')
     const log = JSON.parse(json).log
     const config = JSON.parse(json).threads
-    const allVersions = JSON.parse(json).allversions
+    let allVersions = JSON.parse(json).allversions
     let type = (ati == 10) ? "model" : (ati == 9) ? "place" : "ATI scrape"
     if (isMainThread) {
         if (config == "NOT SET") {
